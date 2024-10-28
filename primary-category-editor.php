@@ -1,10 +1,13 @@
 <?php
 /*
 Plugin Name: Primary Category Editor
+Plugin URI: https://github.com/vestrainteractive/primary-category-editor
 Description: Adds a column to the post list to view and edit the primary category, using Rank Math's primary category, and enables bulk editing.
 Version: 1.1
-Author: Your Name
+Author: Vestra Interactive
+Author URI: https://vestrainteractive.com
 */
+
 
 // Add Primary Category column to the post list
 add_filter('manage_posts_columns', 'pce_add_primary_category_column');
