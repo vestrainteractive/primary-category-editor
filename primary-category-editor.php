@@ -1,11 +1,9 @@
 <?php
 /*
 Plugin Name: Primary Category Editor
-Plugin URI: https://github.com/vestrainteractive/primary-category-editor
 Description: Adds a column to the post list to view and edit the primary category, using Rank Math's primary category, and enables bulk editing.
 Version: 1.1
-Author: Vestra Interactive
-Author URI: https://vestrainteractive.com
+Author: Your Name
 */
 
 // Add Primary Category column to the post list
@@ -108,18 +106,24 @@ function pce_bulk_primary_category_dropdown() {
     global $post_type;
     if ($post_type === 'post') {
         $categories = get_categories(['hide_empty' => false]);
-        echo '<script type="text/javascript">
+        ?>
+        <script type="text/javascript">
             jQuery(document).ready(function($) {
-                $("<label>").text("Primary Category: ").appendTo(".bulkactions select[name=\'action2\']");
-                let dropdown = $("<select name=\'bulk_primary_category\'></select>");
-                dropdown.append($("<option>").val("").text("Select Category"));
-        ';
-        foreach ($categories as $category) {
-            echo 'dropdown.append($("<option>").val("' . esc_attr($category->term_id) . '").text("' . esc_html($category->name) . '"));';
-        }
-        echo '
-                $(".bulkactions select[name=\'action2\']").after(dropdown);
+                var bulkActionsSelectTop = $("select[name='action']");
+                var bulkActionsSelectBottom = $("select[name='action2']");
+
+                // Create the dropdown and add it to both bulk action bars
+                var categoryDropdown = $("<select name='bulk_primary_category'></select>");
+                categoryDropdown.append($("<option>").val("").text("Select Primary Category"));
+                <?php foreach ($categories as $category) : ?>
+                    categoryDropdown.append($("<option>").val("<?php echo esc_attr($category->term_id); ?>").text("<?php echo esc_html($category->name); ?>"));
+                <?php endforeach; ?>
+
+                // Append the dropdown to both bulk action bars
+                bulkActionsSelectTop.after(categoryDropdown.clone());
+                bulkActionsSelectBottom.after(categoryDropdown.clone());
             });
-        </script>';
+        </script>
+        <?php
     }
 }
