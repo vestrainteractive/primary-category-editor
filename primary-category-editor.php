@@ -112,19 +112,31 @@ function pce_bulk_primary_category_dropdown() {
         ?>
         <script type="text/javascript">
             jQuery(document).ready(function($) {
-                var bulkActionsSelectTop = $("select[name='action']");
-                var bulkActionsSelectBottom = $("select[name='action2']");
-
-                // Create the dropdown and add it to both bulk action bars
-                var categoryDropdown = $("<select name='bulk_primary_category'></select>");
-                categoryDropdown.append($("<option>").val("").text("Select Primary Category"));
+                // Add dropdown to the bulk action menu
+                var bulkCategoryDropdown = $('<select name="bulk_primary_category"></select>');
+                bulkCategoryDropdown.append('<option value="">Select Primary Category</option>');
                 <?php foreach ($categories as $category) : ?>
-                    categoryDropdown.append($("<option>").val("<?php echo esc_attr($category->term_id); ?>").text("<?php echo esc_html($category->name); ?>"));
+                    bulkCategoryDropdown.append('<option value="<?php echo esc_attr($category->term_id); ?>"><?php echo esc_html($category->name); ?></option>');
                 <?php endforeach; ?>
 
-                // Append the dropdown to both bulk action bars
-                bulkActionsSelectTop.after(categoryDropdown.clone());
-                bulkActionsSelectBottom.after(categoryDropdown.clone());
+                // Add the dropdown to both bulk action locations
+                $('select[name="action"]').after(bulkCategoryDropdown.clone());
+                $('select[name="action2"]').after(bulkCategoryDropdown.clone());
+
+                // Ensure the selected category value is submitted with the bulk action
+                $('input#doaction, input#doaction2').on('click', function(e) {
+                    var selectedAction = $(this).attr('id') === 'doaction' ? 'action' : 'action2';
+                    var primaryCategory = $('select[name="bulk_primary_category"]').val();
+
+                    // If the Set Primary Category action is selected, add the category to the form
+                    if ($('select[name="' + selectedAction + '"]').val() === 'set_primary_category' && primaryCategory) {
+                        $('<input>').attr({
+                            type: 'hidden',
+                            name: 'bulk_primary_category',
+                            value: primaryCategory
+                        }).appendTo('#posts-filter');
+                    }
+                });
             });
         </script>
         <?php
