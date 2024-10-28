@@ -1,9 +1,11 @@
 <?php
 /*
 Plugin Name: Primary Category Editor
-Description: Adds a column to the post list to view and edit the primary category, using Rank Math's primary category.
-Version: 1.0
-Author: Your Name
+Plugin URI: https://github.com/vestrainteractive/primary-category-editor
+Description: Adds a column to the post list to view and edit the primary category, using Rank Math's primary category, and enables bulk editing.
+Version: 1.1
+Author: Vestra Interactive
+Author URI: https://vestrainteractive.com
 */
 
 // Add Primary Category column to the post list
@@ -59,4 +61,65 @@ function pce_enqueue_admin_scripts($hook) {
         'ajax_url' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('pce-primary-category-nonce')
     ]);
+}
+
+// Add bulk action for setting primary category
+add_action('bulk_actions-edit-post', 'pce_register_bulk_primary_category_action');
+function pce_register_bulk_primary_category_action($bulk_actions) {
+    $bulk_actions['set_primary_category'] = 'Set Primary Category';
+    return $bulk_actions;
+}
+
+// Handle the bulk action for setting primary category
+add_action('handle_bulk_actions-edit-post', 'pce_handle_bulk_primary_category_action', 10, 3);
+function pce_handle_bulk_primary_category_action($redirect_to, $action, $post_ids) {
+    if ($action !== 'set_primary_category') {
+        return $redirect_to;
+    }
+
+    if (!isset($_REQUEST['bulk_primary_category']) || empty($_REQUEST['bulk_primary_category'])) {
+        return $redirect_to;
+    }
+
+    $new_primary_category = intval($_REQUEST['bulk_primary_category']);
+
+    foreach ($post_ids as $post_id) {
+        update_post_meta($post_id, 'rank_math_primary_category', $new_primary_category);
+    }
+
+    $redirect_to = add_query_arg('bulk_primary_category_updated', count($post_ids), $redirect_to);
+    return $redirect_to;
+}
+
+// Add a notice after bulk update
+add_action('admin_notices', 'pce_bulk_action_admin_notice');
+function pce_bulk_action_admin_notice() {
+    if (!empty($_REQUEST['bulk_primary_category_updated'])) {
+        $updated_count = intval($_REQUEST['bulk_primary_category_updated']);
+        printf('<div id="message" class="updated notice is-dismissible"><p>' .
+            _n('%s post\'s primary category updated.', '%s posts\' primary categories updated.', $updated_count, 'primary-category-editor') .
+            '</p></div>', $updated_count);
+    }
+}
+
+// Add the bulk primary category dropdown in the bulk edit area
+add_action('admin_footer-edit.php', 'pce_bulk_primary_category_dropdown');
+function pce_bulk_primary_category_dropdown() {
+    global $post_type;
+    if ($post_type === 'post') {
+        $categories = get_categories(['hide_empty' => false]);
+        echo '<script type="text/javascript">
+            jQuery(document).ready(function($) {
+                $("<label>").text("Primary Category: ").appendTo(".bulkactions select[name=\'action2\']");
+                let dropdown = $("<select name=\'bulk_primary_category\'></select>");
+                dropdown.append($("<option>").val("").text("Select Category"));
+        ';
+        foreach ($categories as $category) {
+            echo 'dropdown.append($("<option>").val("' . esc_attr($category->term_id) . '").text("' . esc_html($category->name) . '"));';
+        }
+        echo '
+                $(".bulkactions select[name=\'action2\']").after(dropdown);
+            });
+        </script>';
+    }
 }
